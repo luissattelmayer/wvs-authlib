@@ -6,7 +6,7 @@ library(patchwork)
 
 wvs <- haven::read_dta("wvs_7_cleaned.dta")
 
-# or if you have downloaded the whole folder with the project and data file
+# if you have downloaded the whole folder with the project and data file
 # load manually
 
 wvs <- haven::read_dta("data/wvs_7_cleaned.dta")
