@@ -73,9 +73,26 @@ unique_vars <- model_data |>
   distinct(variable) |> 
   pull(variable)
 
+# create function to plot all the coefficients of all the different variables
+plot_coefs <- function(data, variable_name) {
+  # Filter the tidied data for the specific variable
+  filtered_data <- data |>
+    filter(variable == variable_name)
+  
+  ggplot(filtered_data, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    geom_point() +
+    geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+    coord_flip() +
+    labs(title = paste("Coefficient Plot for", variable_name),
+         y = "Estimate",
+         x = "") +
+    facet_wrap(~ country_name)
+}
+
 # Use walk to plot coefficients for each variable in country facet wrap
 unique_vars[1:36] |> 
-  walk(~print(plot_coefs(tidy_data, .x)))
+  walk(~print(plot_coefs(coef_data, .x)))
 
 
 

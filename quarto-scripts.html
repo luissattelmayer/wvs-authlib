@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.296">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="author" content="Luis Sattelmayer &amp; Jan Rovny">
+<meta name="dcterms.date" content="2023-10-13">
+<title>World Value Survey</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+<script src="quarto-scripts_files/libs/clipboard/clipboard.min.js"></script>
+<script src="quarto-scripts_files/libs/quarto-html/quarto.js"></script>
+<script src="quarto-scripts_files/libs/quarto-html/popper.min.js"></script>
+<script src="quarto-scripts_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="quarto-scripts_files/libs/quarto-html/anchor.min.js"></script>
+<link href="quarto-scripts_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="quarto-scripts_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="quarto-scripts_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="quarto-scripts_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="quarto-scripts_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+</head>
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="1"><h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+<li><a href="#data-preparation" id="toc-data-preparation" class="nav-link active" data-scroll-target="#data-preparation">Data Preparation</a></li>
+  <li>
+<a href="#distributions" id="toc-distributions" class="nav-link" data-scroll-target="#distributions">Distributions</a>
+  <ul class="collapse">
+<li><a href="#histograms" id="toc-histograms" class="nav-link" data-scroll-target="#histograms">Histograms</a></li>
+  <li><a href="#density-ridges" id="toc-density-ridges" class="nav-link" data-scroll-target="#density-ridges">Density ridges</a></li>
+  <li><a href="#treating-factor-variables-for-later-use" id="toc-treating-factor-variables-for-later-use" class="nav-link" data-scroll-target="#treating-factor-variables-for-later-use">Treating factor variables (for later use)</a></li>
+  <li><a href="#one-function-for-all-distributions" id="toc-one-function-for-all-distributions" class="nav-link" data-scroll-target="#one-function-for-all-distributions">One function for all distributions</a></li>
+  </ul>
+</li>
+  <li>
+<a href="#linear-models" id="toc-linear-models" class="nav-link" data-scroll-target="#linear-models">Linear Models</a>
+  <ul class="collapse">
+<li><a href="#ols-models-socio-economic-indicators" id="toc-ols-models-socio-economic-indicators" class="nav-link" data-scroll-target="#ols-models-socio-economic-indicators">OLS models: socio-economic indicators</a></li>
+  <li><a href="#country-specific-models-on-every-variable" id="toc-country-specific-models-on-every-variable" class="nav-link" data-scroll-target="#country-specific-models-on-every-variable">Country-specific models on every variable</a></li>
+  </ul>
+</li>
+  </ul></nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+</div>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><div class="quarto-title">
+<h1 class="title">World Value Survey</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Luis Sattelmayer &amp; Jan Rovny </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 13, 2023</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header><style>body {text-align: right}</style>
+<section id="data-preparation" class="level1"><h1>Data Preparation</h1>
+<div class="cell">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/">purrr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://wilkelab.org/ggridges/">ggridges</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com">patchwork</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://broom.tidymodels.org/">broom</a></span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This code is to understand the data management I have done prior to any analysis. After this script, I continue to work with the file called <code>wvs_7_cleaned.dta</code>.</p>
+<div class="cell">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_dta.html">read_dta</a></span><span class="op">(</span><span class="st">"data/WVS_TimeSeries_4_0.dta"</span>, encoding<span class="op">=</span><span class="st">"latin1"</span><span class="op">)</span> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>First, we need to filter for EU member states. Next, I wrangled with the code book for a while to identify the variables which the Warsaw team had made out. In a next step, I immediately renamed them to more intuitive abbreviations. Since the datasets format is <code>.dta</code>, the labels are kept and simply printing the renamed variable into the console like this <code>wvs$imp_dem</code> will show the question asked in the survey. The last line of code simply filters for wave 7 (2017-2021).</p>
+<div class="cell">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs</span> <span class="op">&lt;-</span> <span class="va">wvs</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="co"># filtering for EU countries</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">COUNTRY_ALPHA</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"AUT"</span>, <span class="st">"BGR"</span>, <span class="st">"HRV"</span>, <span class="st">"CYP"</span>, <span class="st">"CZE"</span>, <span class="st">"DNK"</span>, <span class="st">"EST"</span>,</span>
+<span>                                <span class="st">"FIN"</span>, <span class="st">"FRA"</span>, <span class="st">"DEU"</span>, <span class="st">"GBR"</span>, <span class="st">"GRC"</span>, <span class="st">"LTU"</span>,</span>
+<span>                                <span class="st">"NLD"</span>, <span class="st">"POL"</span>, <span class="st">"PRT"</span>, <span class="st">"ROU"</span>, <span class="st">"SVK"</span>, <span class="st">"SVN"</span>, <span class="st">"ESP"</span>,</span>
+<span>                                <span class="st">"SWE"</span>, <span class="st">"HUN"</span>, <span class="st">"ISL"</span>, <span class="st">"ITA"</span>, <span class="st">"LVA"</span>, <span class="st">"CHE"</span>, <span class="st">"NOR"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="co"># selecting needed variables</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="va">S002VS</span>, <span class="va">S003</span>, <span class="va">COUNTRY_ALPHA</span>, <span class="va">S006</span>, <span class="va">E235</span>, <span class="va">E111</span>, <span class="va">E114</span>, <span class="va">E115</span>, <span class="va">E116</span>, <span class="va">E117</span>,</span>
+<span>         <span class="va">E117B</span>, <span class="va">E267</span>, <span class="va">F118</span>, <span class="va">F120</span>, <span class="va">F121</span>, <span class="va">F114C</span>, <span class="va">F144_02</span>, <span class="va">E290</span>, <span class="va">D078</span>, <span class="va">A124_02</span>, <span class="va">A124_06</span>, <span class="va">A124_10</span>,</span>
+<span>         <span class="va">A124_09</span>, <span class="va">A124_05</span>, <span class="va">A124_17</span>, <span class="va">E007</span>, <span class="va">H009</span>, <span class="va">H010</span>, <span class="va">H011</span>, <span class="va">G006</span>, <span class="va">E220</span>, <span class="va">A006</span>, <span class="va">F063</span>,</span>
+<span>         <span class="va">F028</span>, <span class="va">E110</span>, <span class="va">H008_07</span>, <span class="va">X001</span>, <span class="va">X003</span>, <span class="va">X002</span>, <span class="va">X025</span>, <span class="va">X028</span>, <span class="va">X045</span>, <span class="va">X047_WVS</span>, <span class="va">X050C</span>,</span>
+<span>         <span class="va">Y001</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="co"># renaming selected variables</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html">rename</a></span><span class="op">(</span><span class="co"># dataset identifiers</span></span>
+<span>         wave <span class="op">=</span> <span class="va">S002VS</span>,</span>
+<span>         cntry_iso <span class="op">=</span> <span class="va">S003</span>, </span>
+<span>         country_name <span class="op">=</span> <span class="va">COUNTRY_ALPHA</span>,</span>
+<span>         id <span class="op">=</span> <span class="va">S006</span>,</span>
+<span>         <span class="co"># system variables</span></span>
+<span>         imp_dem <span class="op">=</span> <span class="va">E235</span>,</span>
+<span>         satis_pol_sys <span class="op">=</span> <span class="va">E111</span>,</span>
+<span>         leader <span class="op">=</span> <span class="va">E114</span>, </span>
+<span>         technocracy <span class="op">=</span> <span class="va">E115</span>,</span>
+<span>         army_rule <span class="op">=</span> <span class="va">E116</span>, </span>
+<span>         dem_good <span class="op">=</span> <span class="va">E117</span>,</span>
+<span>         rel_aut <span class="op">=</span> <span class="va">E117B</span>,</span>
+<span>         imp_elec <span class="op">=</span> <span class="va">E267</span>,</span>
+<span>         <span class="co"># justification/acceptance of social values</span></span>
+<span>         lgbtq <span class="op">=</span> <span class="va">F118</span>,</span>
+<span>         abortion <span class="op">=</span> <span class="va">F120</span>,</span>
+<span>         divorce <span class="op">=</span> <span class="va">F121</span>,</span>
+<span>         beat_child <span class="op">=</span> <span class="va">F114C</span>,</span>
+<span>         death_pen <span class="op">=</span> <span class="va">F144_02</span>,</span>
+<span>         pol_violence <span class="op">=</span> <span class="va">E290</span>,</span>
+<span>         sexism <span class="op">=</span> <span class="va">D078</span>,</span>
+<span>         racism <span class="op">=</span> <span class="va">A124_02</span>,</span>
+<span>         nativism <span class="op">=</span> <span class="va">A124_06</span>,</span>
+<span>         homophobia <span class="op">=</span> <span class="va">A124_09</span>,</span>
+<span>         islamophobia <span class="op">=</span> <span class="va">A124_05</span>, </span>
+<span>         antisemitism <span class="op">=</span> <span class="va">A124_10</span>, </span>
+<span>         antiromani <span class="op">=</span> <span class="va">A124_17</span>,</span>
+<span>         <span class="co"># law &amp; order/surveillance</span></span>
+<span>         maintain_order <span class="op">=</span> <span class="va">E007</span>, </span>
+<span>         surveil_vid <span class="op">=</span> <span class="va">H009</span>,</span>
+<span>         surveil_internet <span class="op">=</span> <span class="va">H010</span>,</span>
+<span>         surveil_indiv <span class="op">=</span> <span class="va">H011</span>,</span>
+<span>         nat_pride <span class="op">=</span> <span class="va">G006</span>,</span>
+<span>         <span class="co"># faith/religiosity</span></span>
+<span>         sci_faith <span class="op">=</span> <span class="va">E220</span>, </span>
+<span>         imp_rel <span class="op">=</span> <span class="va">A006</span>,</span>
+<span>         imp_god <span class="op">=</span> <span class="va">F063</span>,</span>
+<span>         rel_attend <span class="op">=</span> <span class="va">F028</span>,</span>
+<span>         satis_dem_dev <span class="op">=</span> <span class="va">E110</span>, </span>
+<span>         free_equal <span class="op">=</span> <span class="va">H008_07</span>, </span>
+<span>         <span class="co"># controls</span></span>
+<span>         gender <span class="op">=</span> <span class="va">X001</span>,</span>
+<span>         age <span class="op">=</span> <span class="va">X003</span>, </span>
+<span>         yrbrn <span class="op">=</span> <span class="va">X002</span>,</span>
+<span>         educ <span class="op">=</span> <span class="va">X025</span>,</span>
+<span>         empl <span class="op">=</span> <span class="va">X028</span>, </span>
+<span>         sub_class <span class="op">=</span> <span class="va">X045</span>,</span>
+<span>         inc <span class="op">=</span> <span class="va">X047_WVS</span>,</span>
+<span>         urbrur <span class="op">=</span> <span class="va">X050C</span>, </span>
+<span>         postmat <span class="op">=</span> <span class="va">Y001</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">wave</span> <span class="op">==</span> <span class="fl">7</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section><section id="distributions" class="level1"><h1>Distributions</h1>
+<p>Starting here, the script was written with the cleaned dataset in <code>.dta</code> format and imported using the code below:</p>
+<div class="cell">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_dta.html">read_dta</a></span><span class="op">(</span><span class="st">"data/wvs_7_cleaned.dta"</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="histograms" class="level2"><h2 class="anchored" data-anchor-id="histograms">Histograms</h2>
+<p>The code below allows us to plot the distributions individually per variable. The first chunk is for histograms whereas the second plots density ridges. They are all facet wrapped per country. By taking the <code><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap()</a></code> argument of the <code><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot()</a></code> away, we would get the aggregated results for all countries. In order to see the distributions of all other variables, <code>imp_dem</code> must be replaced by the respective variable name.</p>
+<div class="cell">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>imp_dem <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html">if_else</a></span><span class="op">(</span><span class="va">imp_dem</span> <span class="op">&lt;</span> <span class="fl">0</span>, <span class="cn">NA</span>, <span class="va">imp_dem</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span><span class="va">imp_dem</span>, fill <span class="op">=</span> <span class="va">country_name</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">ggtitle</a></span><span class="op">(</span><span class="st">"Distribution of Importance of Democracy per Country between 2017-2022"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">country_name</span>, scales <span class="op">=</span> <span class="st">"free"</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-5-1.png" class="quarto-discovered-preview-image img-fluid" width="672"></p>
+</div>
+</div>
+</section><section id="density-ridges" class="level2"><h2 class="anchored" data-anchor-id="density-ridges">Density ridges</h2>
+<div class="cell">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>imp_dem <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html">if_else</a></span><span class="op">(</span><span class="va">imp_dem</span> <span class="op">&lt;</span> <span class="fl">0</span>, <span class="cn">NA</span>, <span class="va">imp_dem</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span><span class="va">imp_dem</span>, <span class="va">country_name</span>, fill <span class="op">=</span> <span class="va">country_name</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://wilkelab.org/ggridges/reference/geom_density_ridges.html">geom_density_ridges</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_brewer.html">scale_fill_brewer</a></span><span class="op">(</span>palette <span class="op">=</span> <span class="st">"Set1"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">ggtitle</a></span><span class="op">(</span><span class="st">"Distribution of Importance of Democracy per Country between 2017-2022"</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section><section id="treating-factor-variables-for-later-use" class="level2"><h2 class="anchored" data-anchor-id="treating-factor-variables-for-later-use">Treating factor variables (for later use)</h2>
+<p>This below is just a fancy way to do the same thing in a more “tidy/tidyverse” way but it basically yields the same result. This is more important for variables with different levels or factors. For now, our dataset does not include any such variables.</p>
+<div class="cell">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># creating a tibble object which contains nested data frames for each country and</span></span>
+<span><span class="co"># in a second column the nested plots of a variable per country</span></span>
+<span><span class="co"># by changing imp_dem to your variable of interest, you can plot the specific histogram</span></span>
+<span></span>
+<span><span class="va">histograms</span> <span class="op">&lt;-</span> <span class="va">wvs</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">imp_rel</span> <span class="op">&gt;=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span>  <span class="co"># Filter values &gt;= 0</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/nest.html">nest</a></span><span class="op">(</span>data <span class="op">=</span> <span class="op">-</span><span class="va">country_name</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    histograms <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/pmap.html">pmap</a></span><span class="op">(</span></span>
+<span>      .l <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="va">country_name</span>, <span class="va">data</span><span class="op">)</span>,</span>
+<span>      .f <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">country_name</span>, <span class="va">data</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">data</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">educ</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>          <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span>binwidth <span class="op">=</span> <span class="fl">1</span>, alpha <span class="op">=</span> <span class="fl">0.8</span>, color <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>          <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_brewer.html">scale_fill_brewer</a></span><span class="op">(</span><span class="st">"Set1"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>          <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span></span>
+<span>            title <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html">as.character</a></span><span class="op">(</span><span class="va">country_name</span><span class="op">)</span></span>
+<span>          <span class="op">)</span></span>
+<span>      <span class="op">}</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># To view all the plots together, you can use the reduce() function in </span></span>
+<span><span class="co"># combination with the patchwork package. The patchwork package allows you to </span></span>
+<span><span class="co"># combine plots into a larger plot using the plus operator (+):</span></span>
+<span></span>
+<span><span class="va">histograms</span><span class="op">$</span><span class="va">histograms</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/reduce.html">reduce</a></span><span class="op">(</span><span class="va">`+`</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section><section id="one-function-for-all-distributions" class="level2"><h2 class="anchored" data-anchor-id="one-function-for-all-distributions">One function for all distributions</h2>
+<p>First I reshape the data to a longer format so that each row is one variable and the values are per country. I already exclude any value that is smaller than 0 as negative numeric values are “no response”/“did not know” etc response items.</p>
+<div class="cell">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs_cleaned</span> <span class="op">&lt;-</span> <span class="va">wvs</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">id</span>, <span class="op">-</span><span class="va">wave</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html">pivot_longer</a></span><span class="op">(</span>cols <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">country_name</span><span class="op">)</span>, </span>
+<span>               names_to <span class="op">=</span> <span class="st">"variable"</span>, </span>
+<span>               values_to <span class="op">=</span> <span class="st">"value"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html">is.numeric</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span> <span class="op">&amp;</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span> <span class="op">&amp;</span> <span class="va">value</span> <span class="op">&gt;=</span> <span class="fl">0</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>I then proceed to create a function that will <code><a href="https://purrr.tidyverse.org/reference/map.html">walk()</a></code> over our pivoted tibble (dataframe) and that will then plot the distribution individually. The final output will be a facet wrap per country to compare the distributions visually and across cases.</p>
+<p>The first part of the function subsets the given data to keep only the rows where the variable column matches the specified var_name. THis ensures that only the data related to our variables of interest is used for the plot.</p>
+<p>It’s a bit technical but in the end the output will be in yur plot panel and by using the arrows one can click through them.</p>
+<div class="cell">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">create_histograms</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">var_name</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="co"># Subset data for the variable</span></span>
+<span>  <span class="va">data_subset</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op">|&gt;</span> </span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">variable</span> <span class="op">==</span> <span class="va">var_name</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># Create the histogram plot by using ggplot, storing the output in plot object</span></span>
+<span>  <span class="va">plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">data_subset</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span>binwidth <span class="op">=</span> <span class="fl">1</span>, fill <span class="op">=</span> <span class="st">"grey"</span>, color <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">country_name</span>, scales <span class="op">=</span> <span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"Histogram for"</span>, <span class="va">var_name</span><span class="op">)</span>,</span>
+<span>         x <span class="op">=</span> <span class="va">var_name</span>,</span>
+<span>         y <span class="op">=</span> <span class="st">"Count"</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="co"># in order to see all the plots for every variable in your plot panel in R, we</span></span>
+<span>  <span class="co"># need to print it at the end of the function, this might take some time</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">plot</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This is the last step using the <code>purrr</code> package. <code><a href="https://purrr.tidyverse.org/reference/map.html">walk()</a></code> will run our function over each unique entry in the variable list and create the desired output. Some variables like the iso country code do not make any sense while I also realized that the education variable only contains NAs for all of our countries… The rendered output of this document will, however, contain the plots of all variables on several pages.</p>
+<div class="cell">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/unique.html">unique</a></span><span class="op">(</span><span class="va">wvs_cleaned</span><span class="op">$</span><span class="va">variable</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">walk</a></span><span class="op">(</span><span class="op">~</span> <span class="fu">create_histograms</span><span class="op">(</span><span class="va">wvs_cleaned</span>, <span class="va">.x</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section></section><section id="linear-models" class="level1"><h1>Linear Models</h1>
+<section id="ols-models-socio-economic-indicators" class="level2"><h2 class="anchored" data-anchor-id="ols-models-socio-economic-indicators">OLS models: socio-economic indicators</h2>
+<p>We start by subsetting our dataset into a new object <code>wvs_modeling</code> which only contains the “important” variables of interest. Then we exclude any value below 0 to make sure to be only left with the numeric values that actually correspond to the measurement scales excluding missing responses etc. The last line excludes the respondents who have not indicated their gender.</p>
+<div class="cell">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs_modeling</span> <span class="op">&lt;-</span> <span class="va">wvs</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">wave</span>, <span class="va">cntry_iso</span>, <span class="va">id</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html">everything</a></span><span class="op">(</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">pmax</a></span><span class="op">(</span><span class="va">.</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">gender</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The following chunk of code regresses place of residence (1 = urban; 2 = rural), gender (1 = male; 2 = female), income (0 = lowest step; 11 = highest step), and age on <code>imp_dem</code> which is the subjective importance that the respondents attributed to democracy measured on a 0-10 scale (0 = not at all important). Education contains NAs for the entire dataset and all countries. There is no variable of (un-)employment history.</p>
+<div class="cell">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">m1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span><span class="va">imp_dem</span> <span class="op">~</span> <span class="va">urbrur</span> <span class="op">+</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">inc</span> <span class="op">+</span> <span class="va">age</span>, <span class="va">wvs_modeling</span><span class="op">)</span></span>
+<span><span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html">tidy</a></span><span class="op">(</span><span class="va">m1</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 5
+  term        estimate std.error statistic   p.value
+  &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 (Intercept)   7.39     0.119       62.2  0        
+2 urbrur       -0.228    0.0477      -4.79 1.70e-  6
+3 gender       -0.197    0.0426      -4.63 3.76e-  6
+4 inc           0.191    0.00847     22.5  8.44e-110
+5 age           0.0149   0.00116     12.9  1.08e- 37</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">m1</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = imp_dem ~ urbrur + gender + inc + age, data = wvs_modeling)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-9.5846 -0.7477  0.8190  1.4870  3.4636 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  7.387718   0.118835  62.168  &lt; 2e-16 ***
+urbrur      -0.228366   0.047692  -4.788 1.70e-06 ***
+gender      -0.197281   0.042640  -4.627 3.76e-06 ***
+inc          0.190549   0.008471  22.493  &lt; 2e-16 ***
+age          0.014939   0.001160  12.877  &lt; 2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2.33 on 12101 degrees of freedom
+Multiple R-squared:  0.0545,    Adjusted R-squared:  0.05419 
+F-statistic: 174.4 on 4 and 12101 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>If we wanted to look at the models per country, this would be the code:</p>
+<div class="cell">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">wvs_modeling_cze</span> <span class="op">&lt;-</span> <span class="va">wvs</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">wave</span>, <span class="va">cntry_iso</span>, <span class="va">id</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html">everything</a></span><span class="op">(</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">pmax</a></span><span class="op">(</span><span class="va">.</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">gender</span> <span class="op">&gt;</span> <span class="fl">0</span> <span class="op">&amp;</span> <span class="va">country_name</span> <span class="op">==</span> <span class="st">"CZE"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span><span class="va">imp_dem</span> <span class="op">~</span> <span class="va">urbrur</span> <span class="op">+</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">inc</span> <span class="op">+</span> <span class="va">age</span>, <span class="va">wvs_modeling_cze</span><span class="op">)</span></span>
+<span><span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html">tidy</a></span><span class="op">(</span><span class="va">m2</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 5
+  term        estimate std.error statistic  p.value
+  &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+1 (Intercept)  6.71      0.334      20.1   8.15e-78
+2 urbrur       0.361     0.126       2.86  4.26e- 3
+3 gender       0.123     0.108       1.14  2.52e- 1
+4 inc          0.136     0.0316      4.31  1.79e- 5
+5 age         -0.00229   0.00323    -0.707 4.80e- 1</code></pre>
+</div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span><span class="op">(</span><span class="va">m2</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = imp_dem ~ urbrur + gender + inc + age, data = wvs_modeling_cze)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-8.4212 -1.0809  0.1758  1.5942  2.8827 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  6.713518   0.333560  20.127  &lt; 2e-16 ***
+urbrur       0.360636   0.125925   2.864  0.00426 ** 
+gender       0.123289   0.107685   1.145  0.25248    
+inc          0.135880   0.031552   4.307 1.79e-05 ***
+age         -0.002285   0.003232  -0.707  0.47969    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1.858 on 1195 degrees of freedom
+Multiple R-squared:  0.02594,   Adjusted R-squared:  0.02268 
+F-statistic: 7.955 on 4 and 1195 DF,  p-value: 2.501e-06</code></pre>
+</div>
+</div>
+</section><section id="country-specific-models-on-every-variable" class="level2"><h2 class="anchored" data-anchor-id="country-specific-models-on-every-variable">Country-specific models on every variable</h2>
+<p>This long pipeline does some data wrangling we have seen before (like dropping all negative values). The tibble is pivoted to longer format and then grouped by country and variable. The grouped elements are then nested into list-columns which each contain five elements. First, one model (each time one variable of our dataset); second, a tidy representation of the respective model’s information (standard errors, CIs, p-values etc); third, goodness of fit measures; fourth, the fitted values; fifth, manually extracted residuals from the fitted values. <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<div class="cell">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">model_data</span> <span class="op">&lt;-</span> <span class="va">wvs</span> <span class="op">|&gt;</span></span>
+<span>  <span class="co"># drop unimportant variables</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">wave</span>, <span class="op">-</span><span class="va">cntry_iso</span>, <span class="op">-</span><span class="va">id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="co"># get rid of negative values measuring "no response", "not asked" etc items</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html">everything</a></span><span class="op">(</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html">pmax</a></span><span class="op">(</span><span class="va">.</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="co"># pivoting to longer format for later use</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html">pivot_longer</a></span><span class="op">(</span>cols <span class="op">=</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="va">country_name</span>, <span class="va">gender</span>, <span class="va">age</span>, <span class="va">inc</span>, <span class="va">urbrur</span><span class="op">)</span>,</span>
+<span>               names_to <span class="op">=</span> <span class="st">"variable"</span>,</span>
+<span>               values_to <span class="op">=</span> <span class="st">"value"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">variable</span>, <span class="va">country_name</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="co"># nesting into tibbles per country and variable</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/nest.html">nest</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="co"># within nested lists create models per country and variable</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>models <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">data</span>, <span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span><span class="va">value</span> <span class="op">~</span> <span class="va">gender</span> <span class="op">+</span> <span class="va">age</span> <span class="op">+</span> <span class="va">inc</span> <span class="op">+</span> <span class="va">urbrur</span>, data <span class="op">=</span> <span class="va">.x</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>         <span class="co"># get information on every model (CIs, SEs, p-value etc)</span></span>
+<span>         tidied <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">models</span>, <span class="op">~</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html">tidy</a></span><span class="op">(</span><span class="va">.x</span>, conf.int <span class="op">=</span> <span class="cn">TRUE</span>, exponentiate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>         <span class="co"># goodness of fit measures</span></span>
+<span>         glanced <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">models</span>, <span class="va">glance</span><span class="op">)</span>,</span>
+<span>         <span class="co"># fitted values/predicted</span></span>
+<span>         augmented <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">models</span>, <span class="va">augment</span><span class="op">)</span>,</span>
+<span>         <span class="co"># extract residuals manually</span></span>
+<span>         residuals <span class="op">=</span> <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">augmented</span>, <span class="op">~</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html">tibble</a></span><span class="op">(</span>residuals <span class="op">=</span> <span class="va">.x</span><span class="op">$</span><span class="va">.resid</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In the following chunk of code, we write another function that allows us to parallely plot the coefficients of all variables per country so that we can compare the outcome of all OLS models per country for every variable in the dataset.</p>
+<div class="cell">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="va">plot_coefs</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">variable_name</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="co"># Filter the tidied data for the specific variable</span></span>
+<span>  <span class="va">filtered_data</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">variable</span> <span class="op">==</span> <span class="va">variable_name</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">filtered_data</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">term</span>, y <span class="op">=</span> <span class="va">estimate</span>, ymin <span class="op">=</span> <span class="va">conf.low</span>, ymax <span class="op">=</span> <span class="va">conf.high</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html">geom_hline</a></span><span class="op">(</span>yintercept <span class="op">=</span> <span class="fl">0</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>, color <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_linerange.html">geom_errorbar</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>ymin <span class="op">=</span> <span class="va">conf.low</span>, ymax <span class="op">=</span> <span class="va">conf.high</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_flip.html">coord_flip</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"Coefficient Plot for"</span>, <span class="va">variable_name</span><span class="op">)</span>,</span>
+<span>         y <span class="op">=</span> <span class="st">"Estimate"</span>,</span>
+<span>         x <span class="op">=</span> <span class="st">""</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">country_name</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In a next step, we then <code><a href="https://tidyr.tidyverse.org/reference/unnest.html">unnest()</a></code> the tidied columns (the ones containing the single models), select the information which we are interested in and get rid of the Intercept estimates. Lastly, we repeat the process of “walking” our <code>plot_coefs()</code> on the unnested data. The output are 36 graphs of the -coefficients.</p>
+<div class="cell">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r code-with-copy"><code class="sourceCode R"><span><span class="co"># extract (unnest) the list of model information for each country and variable</span></span>
+<span><span class="va">coef_data</span> <span class="op">&lt;-</span> <span class="va">model_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/unnest.html">unnest</a></span><span class="op">(</span><span class="va">tidied</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="va">variable</span>, <span class="va">country_name</span>, <span class="va">term</span>, <span class="va">estimate</span>, <span class="va">conf.low</span>, <span class="va">conf.high</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="co"># get rid of Intercept estimate</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">term</span> <span class="op">!=</span> <span class="st">"(Intercept)"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">unique_vars</span> <span class="op">&lt;-</span> <span class="va">model_data</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html">distinct</a></span><span class="op">(</span><span class="va">variable</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html">pull</a></span><span class="op">(</span><span class="va">variable</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Use walk to plot coefficients for each variable in country facet wrap</span></span>
+<span><span class="va">unique_vars</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">36</span><span class="op">]</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">walk</a></span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="fu">plot_coefs</span><span class="op">(</span><span class="va">coef_data</span>, <span class="va">.x</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-6.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-7.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-8.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-9.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-10.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-11.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-12.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-13.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-14.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-15.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-16.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-17.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-18.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-19.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-20.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-21.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-22.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-23.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-24.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-25.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-26.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-27.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-28.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-29.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-30.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-31.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-32.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-33.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-34.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-35.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="quarto-scripts_files/figure-html/unnamed-chunk-17-36.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<style>body {text-align: justify}</style></section></section><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+<ol>
+<li id="fn1"><p>Steps 3-5 are a bit unncessary at this stage.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol></section></div></main><!-- /main column --><script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

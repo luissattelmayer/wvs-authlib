@@ -4,10 +4,9 @@ library(ggridges)
 library(patchwork)
 
 
-wvs <- haven::read_dta("wvs_7_cleaned.dta")
 
 # if you have downloaded the whole folder with the project and data file
-# load manually
+# you can run this line below
 
 wvs <- haven::read_dta("data/wvs_7_cleaned.dta")
 
@@ -18,7 +17,6 @@ glimpse(wvs)
 # code for individual histograms & facet wrap per country
 # by changing "imp_dem" to any other variable of the dataset, you can inspect 
 # the distribution of any other variable
-
 wvs |> 
   mutate(imp_dem = if_else(imp_dem < 0, NA, imp_dem)) |> 
   ggplot(aes(imp_dem, fill = country_name)) +
@@ -28,7 +26,7 @@ wvs |>
   ggtitle("Distribution of Importance of Democracy per Country between 2017-2022") +
   facet_wrap(~ country_name, scales = "free")
 
-# density ridges 
+# density ridges
 wvs |> 
   mutate(imp_dem = if_else(imp_dem < 0, NA, imp_dem)) |> 
   ggplot(aes(imp_dem, country_name, fill = country_name)) +
@@ -38,17 +36,6 @@ wvs |>
   theme(legend.position = "none") +
   ggtitle("Distribution of Importance of Democracy per Country between 2017-2022")
 
-
-
-# creating a function that creates a histogram for every variable of a dataset
-plot_histogram <- function(data, variable_name) {
-  ggplot(data, aes(x = {{ variable_name }})) +
-    geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
-    labs(title = paste("Histogram of", enquo(variable_name)),
-         x = quo_name(variable_name),
-         y = "Frequency") +
-    theme_minimal()
-}
 
 
 

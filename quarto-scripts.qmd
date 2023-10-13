@@ -1,0 +1,372 @@
+---
+title: "World Value Survey"
+author: Luis Sattelmayer & Jan Rovny
+date: last-modified
+format:
+  html:
+    theme: minimal
+    toc: true
+    toc-expand: 1
+    code-block-background: true
+    code-block-border-left: "#31BAE9"
+    highlight-style: pygments
+    code-copy: true
+    code-link: true
+    toc-location: left
+    citations-hover: true
+    footnotes-hover: true
+    grid: 
+      body-width: 2000px
+      sidebar-width: 270px
+---
+<style>body {text-align: right}</style>
+
+
+
+
+
+
+# Data Preparation
+```{r}
+#| output: false
+library(tidyverse)
+library(purrr)
+library(ggridges)
+library(patchwork)
+library(broom)
+```
+
+This code is to understand the data management I have done prior to any analysis. After this script, I continue to work with the file called `wvs_7_cleaned.dta`. 
+
+
+```{r}
+#| eval: false
+wvs <- haven::read_dta("data/WVS_TimeSeries_4_0.dta", encoding="latin1") 
+```
+
+First, we need to filter for EU member states. Next, I wrangled with the code book for a while to identify the variables which the Warsaw team had made out. In a next step, I immediately renamed them to more intuitive abbreviations. Since the datasets format is `.dta`, the labels are kept and simply printing the renamed variable into the console like this `wvs$imp_dem` will show the question asked in the survey. The last line of code simply filters for wave 7 (2017-2021).
+
+```{r}
+#| eval: false
+wvs <- wvs |> 
+  # filtering for EU countries
+  filter(COUNTRY_ALPHA %in% c("AUT", "BGR", "HRV", "CYP", "CZE", "DNK", "EST",
+                                "FIN", "FRA", "DEU", "GBR", "GRC", "LTU",
+                                "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP",
+                                "SWE", "HUN", "ISL", "ITA", "LVA", "CHE", "NOR")) |> 
+  # selecting needed variables
+  select(S002VS, S003, COUNTRY_ALPHA, S006, E235, E111, E114, E115, E116, E117,
+         E117B, E267, F118, F120, F121, F114C, F144_02, E290, D078, A124_02, A124_06, A124_10,
+         A124_09, A124_05, A124_17, E007, H009, H010, H011, G006, E220, A006, F063,
+         F028, E110, H008_07, X001, X003, X002, X025, X028, X045, X047_WVS, X050C,
+         Y001) |> 
+  # renaming selected variables
+  rename(# dataset identifiers
+         wave = S002VS,
+         cntry_iso = S003, 
+         country_name = COUNTRY_ALPHA,
+         id = S006,
+         # system variables
+         imp_dem = E235,
+         satis_pol_sys = E111,
+         leader = E114, 
+         technocracy = E115,
+         army_rule = E116, 
+         dem_good = E117,
+         rel_aut = E117B,
+         imp_elec = E267,
+         # justification/acceptance of social values
+         lgbtq = F118,
+         abortion = F120,
+         divorce = F121,
+         beat_child = F114C,
+         death_pen = F144_02,
+         pol_violence = E290,
+         sexism = D078,
+         racism = A124_02,
+         nativism = A124_06,
+         homophobia = A124_09,
+         islamophobia = A124_05, 
+         antisemitism = A124_10, 
+         antiromani = A124_17,
+         # law & order/surveillance
+         maintain_order = E007, 
+         surveil_vid = H009,
+         surveil_internet = H010,
+         surveil_indiv = H011,
+         nat_pride = G006,
+         # faith/religiosity
+         sci_faith = E220, 
+         imp_rel = A006,
+         imp_god = F063,
+         rel_attend = F028,
+         satis_dem_dev = E110, 
+         free_equal = H008_07, 
+         # controls
+         gender = X001,
+         age = X003, 
+         yrbrn = X002,
+         educ = X025,
+         empl = X028, 
+         sub_class = X045,
+         inc = X047_WVS,
+         urbrur = X050C, 
+         postmat = Y001) |> 
+  filter(wave == 7)
+```
+
+# Distributions
+
+Starting here, the script was written with the cleaned dataset in `.dta` format and imported using the code below: 
+
+```{r}
+wvs <- haven::read_dta("data/wvs_7_cleaned.dta")
+```
+
+
+## Histograms
+The code below allows us to plot the distributions individually per variable. The first chunk is for histograms whereas the second plots density ridges. They are all facet wrapped per country. By taking the `facet_wrap()` argument of the `ggplot()` away, we would get the aggregated results for all countries. In order to see the distributions of all other variables, `imp_dem` must be replaced by the respective variable name.
+
+```{r}
+#| warning: false
+wvs |> 
+  mutate(imp_dem = if_else(imp_dem < 0, NA, imp_dem)) |> 
+  ggplot(aes(imp_dem, fill = country_name)) +
+  geom_histogram() +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  ggtitle("Distribution of Importance of Democracy per Country between 2017-2022") +
+  facet_wrap(~ country_name, scales = "free")
+
+```
+
+## Density ridges
+```{r}
+#| warning: false
+wvs |> 
+  mutate(imp_dem = if_else(imp_dem < 0, NA, imp_dem)) |> 
+  ggplot(aes(imp_dem, country_name, fill = country_name)) +
+  geom_density_ridges() +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1") +
+  theme(legend.position = "none") +
+  ggtitle("Distribution of Importance of Democracy per Country between 2017-2022")
+```
+
+
+## Treating factor variables (for later use)
+This below is just a fancy way to do the same thing in a more "tidy/tidyverse" way but it basically yields the same result. This is more important for variables with different levels or factors. For now, our dataset does not include any such variables. 
+
+```{r}
+#| warning: false
+
+# creating a tibble object which contains nested data frames for each country and
+# in a second column the nested plots of a variable per country
+# by changing imp_dem to your variable of interest, you can plot the specific histogram
+
+histograms <- wvs |>
+  filter(imp_rel >= 0) |>  # Filter values >= 0
+  nest(data = -country_name) |>
+  mutate(
+    histograms = pmap(
+      .l = list(country_name, data),
+      .f = function(country_name, data) {
+        ggplot(data, aes(x = educ)) +
+          geom_histogram(binwidth = 1, alpha = 0.8, color = "black") +
+          scale_fill_brewer("Set1") +
+          labs(
+            title = as.character(country_name)
+          )
+      }
+    )
+  )
+
+
+# To view all the plots together, you can use the reduce() function in 
+# combination with the patchwork package. The patchwork package allows you to 
+# combine plots into a larger plot using the plus operator (+):
+
+histograms$histograms |>
+  reduce(`+`)
+```
+
+
+## One function for all distributions
+First I reshape the data to a longer format so that each row is one variable and the values are per country. I already exclude any value that is smaller than 0 as negative numeric values are "no response"/"did not know" etc response items.
+
+
+```{r}
+#| warning: false
+wvs_cleaned <- wvs |>
+  select(-id, -wave) |>
+  pivot_longer(cols = -c(country_name), 
+               names_to = "variable", 
+               values_to = "value") |> 
+  filter(is.numeric(value) & !is.na(value) & value >= 0)
+```
+
+
+
+
+I then proceed to create a function that will `walk()` over our pivoted tibble (dataframe) and that will then plot the distribution individually. The final output will be a facet wrap per country to compare the distributions visually and across cases. 
+
+The first part of the function subsets the given data to keep only the rows where the variable column matches the specified var_name. THis ensures that only the data related to our variables of interest is used for the plot.
+
+It's a bit technical but in the end the output will be in yur plot panel and by using the arrows one can click through them.
+
+```{r}
+#| warning: false
+create_histograms <- function(data, var_name) {
+  # Subset data for the variable
+  data_subset <- data |> 
+    filter(variable == var_name)
+  
+  # Create the histogram plot by using ggplot, storing the output in plot object
+  plot <- ggplot(data_subset, aes(x = value)) + 
+    geom_histogram(binwidth = 1, fill = "grey", color = "black") +
+    facet_wrap(~ country_name, scales = "free_y") +
+    labs(title = paste("Histogram for", var_name),
+         x = var_name,
+         y = "Count")
+  
+  # in order to see all the plots for every variable in your plot panel in R, we
+  # need to print it at the end of the function, this might take some time
+  print(plot)
+}
+```
+
+
+This is the last step using the `purrr` package. `walk()` will run our function over each unique entry in the variable list and create the desired output. Some variables like the iso country code do not make any sense while I also realized that the education variable only contains NAs for all of our countries... The rendered output of this document will, however, contain the plots of all variables on several pages. 
+
+
+```{r}
+#| warning: false
+#| eval: false
+unique(wvs_cleaned$variable) |>
+  purrr::walk(~ create_histograms(wvs_cleaned, .x))
+```
+
+
+# Linear Models
+
+## OLS models: socio-economic indicators
+
+We start by subsetting our dataset into a new object `wvs_modeling` which only contains the "important" variables of interest. Then we exclude any value below 0 to make sure to be only left with the numeric values that actually correspond to the measurement scales excluding missing responses etc. The last line excludes the respondents who have not indicated their gender.
+
+```{r}
+#| warning: false
+wvs_modeling <- wvs |> 
+  select(-c(wave, cntry_iso, id)) |> 
+  mutate(across(everything(), ~ pmax(., 0))) |> 
+  filter(gender > 0)
+```
+
+The following chunk of code regresses place of residence (1 = urban; 2 = rural), gender (1 = male; 2 = female), income (0 = lowest step; 11 = highest step), and age on `imp_dem` which is the subjective importance that the respondents attributed to democracy measured on a 0-10 scale (0 = not at all important). Education contains NAs for the entire dataset and all countries. There is no variable of (un-)employment history.
+
+```{r}
+#| warning: false
+m1 <- lm(imp_dem ~ urbrur + gender + inc + age, wvs_modeling)
+broom::tidy(m1)
+```
+
+```{r}
+#| warning: false
+summary(m1)
+```
+
+
+If we wanted to look at the models per country, this would be the code: 
+
+```{r}
+#| warning: false
+wvs_modeling_cze <- wvs |> 
+  select(-c(wave, cntry_iso, id)) |> 
+  mutate(across(everything(), ~ pmax(., 0))) |> 
+  filter(gender > 0 & country_name == "CZE")
+
+m2 <- lm(imp_dem ~ urbrur + gender + inc + age, wvs_modeling_cze)
+broom::tidy(m2)
+summary(m2)
+```
+
+## Country-specific models on every variable
+This long pipeline does some data wrangling we have seen before (like dropping all negative values). The tibble is pivoted to longer format and then grouped by country and variable. The grouped elements are then nested into list-columns which each contain five elements. First, one model (each time one variable of our dataset); second, a tidy representation of the respective model's information (standard errors, CIs, p-values etc); third, goodness of fit measures; fourth, the fitted values; fifth, manually extracted residuals from the fitted values. [^1]
+
+[^1]: Steps 3-5 are a bit unncessary at this stage.
+
+
+
+```{r}
+#| warning: false
+
+model_data <- wvs |>
+  # drop unimportant variables
+  select(-wave, -cntry_iso, -id) |>
+  # get rid of negative values measuring "no response", "not asked" etc items
+  mutate(across(everything(), ~ pmax(., 0))) |>
+  # pivoting to longer format for later use
+  pivot_longer(cols = -c(country_name, gender, age, inc, urbrur),
+               names_to = "variable",
+               values_to = "value") |> 
+  group_by(variable, country_name) |>
+  # nesting into tibbles per country and variable
+  nest() |>
+  # within nested lists create models per country and variable
+  mutate(models = map(data, ~lm(value ~ gender + age + inc + urbrur, data = .x)),
+         # get information on every model (CIs, SEs, p-value etc)
+         tidied = map(models, ~tidy(.x, conf.int = TRUE, exponentiate = TRUE)),
+         # goodness of fit measures
+         glanced = map(models, glance),
+         # fitted values/predicted
+         augmented = map(models, augment),
+         # extract residuals manually
+         residuals = map(augmented, ~tibble(residuals = .x$.resid)))
+```
+
+
+In the following chunk of code, we write another function that allows us to parallely plot the coefficients of all variables per country so that we can compare the outcome of all OLS models per country for every variable in the dataset. 
+
+
+```{r}
+plot_coefs <- function(data, variable_name) {
+  # Filter the tidied data for the specific variable
+  filtered_data <- data |>
+    filter(variable == variable_name)
+  
+  ggplot(filtered_data, aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    geom_point() +
+    geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+    coord_flip() +
+    labs(title = paste("Coefficient Plot for", variable_name),
+         y = "Estimate",
+         x = "") +
+    facet_wrap(~ country_name)
+}
+```
+
+
+
+In a next step, we then `unnest()` the tidied columns (the ones containing the single models), select the information which we are interested in and get rid of the Intercept estimates. Lastly, we repeat the process of "walking" our `plot_coefs()` on the unnested data. The output are 36 graphs of the \beta -coefficients.
+
+```{r}
+# extract (unnest) the list of model information for each country and variable
+coef_data <- model_data |>
+  unnest(tidied) |>
+  select(variable, country_name, term, estimate, conf.low, conf.high) |>
+  # get rid of Intercept estimate
+  filter(term != "(Intercept)")
+
+unique_vars <- model_data |> 
+  distinct(variable) |> 
+  pull(variable)
+
+# Use walk to plot coefficients for each variable in country facet wrap
+unique_vars[1:36] |> 
+  walk(~print(plot_coefs(coef_data, .x)))
+```
+
+
+
+<style>body {text-align: justify}</style>
+
